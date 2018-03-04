@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans     
+        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.0.xsd
+        http://www.springframework.org/schema/aop
+    	http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+    	http://www.springframework.org/schema/tx
+    	http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+        "
+	xmlns="http://www.springframework.org/schema/beans">
+
+	
+
+	<bean id="sessionFactory" 
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+
+		<property name="dataSource" ref="dataSource" />
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.show_sql">true </prop>
+				<prop key="hibernate.format_sql">true</prop>
+				<!-- 获取当前session并开启事务，由Spring来管理，若单独使用Hibernate则用thread  -->
+				<prop key="hibernate.current_session_context_class">
+				org.springframework.orm.hibernate4.SpringSessionContext
+				</prop>
+				<!-- 不自动提交，用于事务 -->
+				<prop key="hibernate.connection.autocommit" >false</prop>
+			</props>
+		</property>
+
+		<!-- 扫描实体 -->
+		<property name="packagesToScan">
+			<value>
+				gdut.timer.model
+			</value>
+		</property>
+	</bean>
+
+
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="${jdbc.driverClassName}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+
+	<!-- 配置Hibernate4事务管理器 -->
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	
+	
+	<!-- 
+	基于注解的事务，当注解中发现@Transactional时，使用id为“transactionManager”的事务管理器
+	如果没有设置transaction-manager的值，则spring以缺省默认的事务管理器来处理事务，默认事务管理器为第一个加载的事务管理器 
+	如果proxy-target-class 属性值被设置为true，那么基于类的代理将起作用（这时需要cglib库）。
+	如果proxy-target-class属值被设置为false或者这个属性被省略，那么标准的JDK 基于接口的代-->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+
+	<!-- 声明式容器事务管理 ,transaction-manager指定事务管理器为transactionManager -->
+	<!--  <tx:advice id="txAdvice" transaction-manager="transactionManager">
+
+		<tx:attributes>
+			<tx:method name="find*" read-only="true" />
+			<tx:method name="get*"  read-only="true" />
+			<tx:method name="add*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+			<tx:method name="delete*" propagation="REQUIRED" />
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="test*" propagation="REQUIRED" />rollback-for="java.io.IOException" 
+			<tx:method name="*Transaction" propagation="REQUIRED" />
+			<tx:method name="*" propagation="REQUIRED" />
+		</tx:attributes>
+	</tx:advice>  -->
+	<!-- rollback-for="java.io.IOException" -->
+	<!-- 只对业务逻辑层实施事务 -->
+	<!-- <aop:config expose-proxy="true"> 
+		<aop:pointcut id="txPointcut"
+			expression="execution(* com.ghy.service..*.*(..))" />
+		Advisor定义，切入点和通知分别为txPointcut、txAdvice
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut" />
+	</aop:config> -->
+</beans>
